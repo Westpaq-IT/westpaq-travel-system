@@ -65,7 +65,7 @@ export default function Sidebar({ currentPage, navigate }) {
     <aside className="sidebar">
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <img src="./westpaq-logo.png" alt="Westpaq" style={{height:36,width:'auto',objectFit:'contain'}} />
+          <img src="./westpaq_logo-01.png" alt="Westpaq" style={{height:36,width:'auto',objectFit:'contain'}} />
           <div>
             <div className="sidebar-brand">WESTPAQ</div>
             <div className="sidebar-sub">Travel Log System</div>
@@ -153,10 +153,24 @@ export default function Sidebar({ currentPage, navigate }) {
             <div className="user-name">{displayName}</div>
             <div className="user-role">{profile?.role || 'support'}</div>
           </div>
-          <button className="logout-btn" onClick={signOut} title="Sign out">
-            <icons.logout />
-          </button>
         </div>
+        <button
+          onClick={signOut}
+          style={{
+            display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+            width:'100%',padding:'10px 12px',marginTop:6,
+            background:'#7B1414',border:'none',borderRadius:8,
+            color:'white',cursor:'pointer',fontSize:13.5,
+            fontFamily:'inherit',fontWeight:600
+          }}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{width:15,height:15}}>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Sign Out
+        </button>
       </div>
     </aside>
   )
