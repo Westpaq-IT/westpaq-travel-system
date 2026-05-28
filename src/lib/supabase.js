@@ -25,7 +25,7 @@ export const FLIGHT_TYPE_LABELS = {
   offshore: 'Offshore Log',
 }
 
-export const COMPANIES = ['WESTPAQ', 'UTC', 'BMG', 'Others']
+export const COMPANIES = ['WESTPAQ', 'UTC', 'DBR', 'Others']
 
 export const NATIONALITIES = [
   'NIG', 'BRA', 'USA', 'UK', 'LEB', 'CAM', 'EQG', 'CMR', 'NG', 'Other'
