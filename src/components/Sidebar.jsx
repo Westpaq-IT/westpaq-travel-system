@@ -65,9 +65,9 @@ export default function Sidebar({ currentPage, navigate }) {
     <aside className="sidebar">
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <div className="logo-mark">WU</div>
+          <img src="./westpaq-logo.png" alt="Westpaq" style={{height:36,width:'auto',objectFit:'contain'}} />
           <div>
-            <div className="sidebar-brand">WESTPAQ · UTC</div>
+            <div className="sidebar-brand">WESTPAQ</div>
             <div className="sidebar-sub">Travel Log System</div>
           </div>
         </div>
