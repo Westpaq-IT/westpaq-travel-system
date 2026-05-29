@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase, FLIGHT_TYPE_LABELS } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { format, addDays, isToday, isTomorrow, parseISO, startOfDay } from 'date-fns'
 
 const TYPE_COLORS = {
@@ -18,6 +18,44 @@ function Detail({ label, value }) {
       </span>
       <span style={{ fontSize: 12, color: 'var(--slate)', fontWeight: 500 }}>{value}</span>
     </span>
+  )
+}
+
+function TimeBlock({ eta, etd, accent }) {
+  const etaDisplay = eta ? eta.slice(0, 5) : null
+  const etdDisplay = etd ? etd.slice(0, 5) : null
+
+  if (!etaDisplay && !etdDisplay) {
+    return (
+      <div style={{ minWidth: 60, textAlign: 'center' }}>
+        <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 700, color: 'var(--silver)' }}>--:--</div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ minWidth: 60, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {etaDisplay && (
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 700, color: accent, lineHeight: 1 }}>
+            {etaDisplay}
+          </div>
+          <div style={{ fontSize: 9, color: 'var(--mist)', letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: 2 }}>
+            ETA
+          </div>
+        </div>
+      )}
+      {etdDisplay && (
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 15, fontWeight: 700, color: accent, lineHeight: 1 }}>
+            {etdDisplay}
+          </div>
+          <div style={{ fontSize: 9, color: 'var(--mist)', letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: 2 }}>
+            ETD
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -100,12 +138,12 @@ export default function Dashboard({ navigate }) {
   }
 
   const statCards = [
-    { label: 'Total Records',     value: stats.total,      accent: '#636366', nav: 'dashboard'                  },
-    { label: "Int'l Arrivals",    value: stats.arrivals,   accent: '#065F46', nav: 'international-arrivals'     },
-    { label: "Int'l Departures",  value: stats.departures, accent: '#1E40AF', nav: 'international-departures'   },
-    { label: 'Domestic Flights',  value: stats.domestic,   accent: '#6B21A8', nav: 'domestic'                   },
-    { label: 'Offshore Log',      value: stats.offshore,   accent: '#B45309', nav: 'offshore'                   },
-    { label: 'Upcoming (7 days)', value: stats.upcoming7,  accent: '#9B1C1C', nav: 'dashboard'                  },
+    { label: 'Total Records',     value: stats.total,      accent: '#636366', nav: 'dashboard'                },
+    { label: "Int'l Arrivals",    value: stats.arrivals,   accent: '#065F46', nav: 'international-arrivals'   },
+    { label: "Int'l Departures",  value: stats.departures, accent: '#1E40AF', nav: 'international-departures' },
+    { label: 'Domestic Flights',  value: stats.domestic,   accent: '#6B21A8', nav: 'domestic'                 },
+    { label: 'Offshore Log',      value: stats.offshore,   accent: '#B45309', nav: 'offshore'                 },
+    { label: 'Upcoming (7 days)', value: stats.upcoming7,  accent: '#9B1C1C', nav: 'dashboard'                },
   ]
 
   const grouped = groupByDay(upcoming)
@@ -168,53 +206,49 @@ export default function Dashboard({ navigate }) {
                   <div key={date} className="day-group">
                     <div className="day-label">{dayLabel(date)}</div>
                     {flights.map(f => {
-                      const tc   = TYPE_COLORS[f.flight_type] || TYPE_COLORS.domestic
-                      const time = f.eta_time || f.etd_time
+                      const tc = TYPE_COLORS[f.flight_type] || TYPE_COLORS.domestic
                       const route = f.departure_from && f.arrival_to
                         ? `${f.departure_from} → ${f.arrival_to}`
                         : f.departure_from || f.arrival_to || null
 
                       return (
-                        <div key={f.id} className="flight-row" style={{ alignItems: 'flex-start', paddingTop: 14, paddingBottom: 14 }}>
+                        <div key={f.id} className="flight-row" style={{ alignItems: 'flex-start', paddingTop: 14, paddingBottom: 14, gap: 14 }}>
 
-                          {/* Time */}
-                          <div className="flight-time" style={{ color: tc.accent, paddingTop: 2 }}>
-                            {time ? time.slice(0, 5) : '--:--'}
-                          </div>
+                          {/* ETA / ETD block */}
+                          <TimeBlock eta={f.eta_time} etd={f.etd_time} accent={tc.accent} />
+
+                          {/* Divider line */}
+                          <div style={{ width: 1, background: 'var(--smoke)', alignSelf: 'stretch', flexShrink: 0 }} />
 
                           {/* Main info */}
                           <div className="flight-info" style={{ flex: 1 }}>
                             <div className="flight-name" style={{ marginBottom: 3 }}>{f.name}</div>
-
-                            {/* Row 1: company, position, nationality */}
-                            <div style={{ fontSize: 12, color: 'var(--mist)', marginBottom: 4 }}>
+                            <div style={{ fontSize: 12, color: 'var(--mist)', marginBottom: 5 }}>
                               {[f.company, f.position, f.nationality].filter(Boolean).join(' · ')}
                             </div>
-
-                            {/* Row 2: detail chips */}
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0 }}>
-                              <Detail label="Route"   value={route} />
-                              <Detail label="Reason"  value={f.reason} />
-                              <Detail label="Ticket"  value={f.ticket_booking} />
-                              <Detail label="Stay"    value={f.accommodation} />
-                              {f.visa_status && <Detail label="Visa" value={f.visa_status} />}
+                            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                              <Detail label="Route"  value={route} />
+                              <Detail label="Reason" value={f.reason} />
+                              <Detail label="Ticket" value={f.ticket_booking} />
+                              <Detail label="Stay"   value={f.accommodation} />
+                              {f.visa_status && <Detail label="Visa"   value={f.visa_status} />}
                               {f.status      && <Detail label="Status" value={f.status} />}
                             </div>
+                            {f.remarks && (
+                              <div style={{ fontSize: 11, color: 'var(--mist)', marginTop: 4, fontStyle: 'italic' }}>
+                                {f.remarks}
+                              </div>
+                            )}
                           </div>
 
                           {/* Right: flight number + badge */}
-                          <div className="flight-right" style={{ textAlign: 'right', paddingTop: 2 }}>
-                            <div className="flight-number" style={{ color: tc.accent, marginBottom: 4 }}>
+                          <div style={{ textAlign: 'right', flexShrink: 0, paddingTop: 2 }}>
+                            <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 13, fontWeight: 700, color: tc.accent, marginBottom: 5 }}>
                               {f.flight_number || '—'}
                             </div>
                             <span className={`badge ${tc.badge}`} style={{ fontSize: 10 }}>
                               {tc.label}
                             </span>
-                            {f.remarks && (
-                              <div style={{ fontSize: 10, color: 'var(--mist)', marginTop: 4, maxWidth: 120, textAlign: 'right', fontStyle: 'italic' }}>
-                                {f.remarks}
-                              </div>
-                            )}
                           </div>
 
                         </div>
@@ -264,10 +298,20 @@ export default function Dashboard({ navigate }) {
                         )}
                       </div>
                     </div>
-                    {/* Extra detail line */}
-                    <div style={{ marginTop: 4, marginLeft: 18, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {r.nationality   && <Detail label="Nat"    value={r.nationality} />}
-                      {r.reason        && <Detail label="Reason" value={r.reason} />}
+                    {/* Time + detail line */}
+                    <div style={{ marginTop: 5, marginLeft: 18, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                      {r.eta_time && (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: tc.accent }}>
+                          ETA {r.eta_time.slice(0, 5)}
+                        </span>
+                      )}
+                      {r.etd_time && (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: tc.accent }}>
+                          ETD {r.etd_time.slice(0, 5)}
+                        </span>
+                      )}
+                      {r.nationality    && <Detail label="Nat"    value={r.nationality} />}
+                      {r.reason         && <Detail label="Reason" value={r.reason} />}
                       {r.ticket_booking && <Detail label="Ticket" value={r.ticket_booking} />}
                       {(r.departure_from || r.arrival_to) && (
                         <Detail label="Route" value={[r.departure_from, r.arrival_to].filter(Boolean).join(' → ')} />
