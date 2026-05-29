@@ -18,7 +18,6 @@ export default function AuthPage() {
     setError('')
     setSuccess('')
     setLoading(true)
-
     try {
       if (mode === 'login') {
         const { error } = await signIn(email, password)
@@ -27,7 +26,7 @@ export default function AuthPage() {
         if (!fullName.trim()) { setError('Full name is required'); setLoading(false); return }
         const { error } = await signUp(email, password, fullName)
         if (error) setError(error.message)
-        else setSuccess('Account created! Check your email to confirm, or ask your admin to verify your account.')
+        else setSuccess('Account request sent! Your admin will verify and activate your account.')
       }
     } catch (e) {
       setError('Something went wrong. Please try again.')
@@ -38,46 +37,68 @@ export default function AuthPage() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="auth-logo">
-          <div className="auth-logo-mark">WU</div>
-          <div>
-            <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 18, color: 'var(--charcoal)' }}>
-              Westpaq · UTC
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--mist)', marginTop: 2 }}>
-              Bonga North Project — Travel Log
-            </div>
+
+        {/* ── Logo & Brand ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
+          <img
+            src="./westpaq_logo-01.png"
+            alt="Westpaq"
+            style={{ height: 64, width: 'auto', objectFit: 'contain', marginBottom: 14 }}
+            onError={e => {
+              e.target.style.display = 'none'
+              e.target.nextSibling.style.display = 'flex'
+            }}
+          />
+          {/* Fallback if logo fails to load */}
+          <div style={{
+            display: 'none', width: 64, height: 64, background: 'var(--red)',
+            borderRadius: 14, alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'Syne, sans-serif', fontWeight: 700, color: 'white',
+            fontSize: 22, marginBottom: 14,
+          }}>W</div>
+
+          <div style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 22, color: 'var(--charcoal)', letterSpacing: '-0.3px' }}>
+            WESTPAQ
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--mist)', marginTop: 3, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+            Travel Log System
           </div>
         </div>
 
+        {/* ── Setup warning (only shows if Supabase not configured) ── */}
         {isDemo && (
-          <div className="config-banner">
+          <div className="config-banner" style={{ marginBottom: 20 }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16, flexShrink: 0, marginTop: 1 }}>
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
               <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
             <div>
-              <strong>Setup required:</strong> Edit <code>src/lib/supabase.js</code> and add your Supabase URL and API key, then run the SQL schema. See README.md for instructions.
+              <strong>Setup required:</strong> Add your Supabase credentials and run the SQL schema before using this system.
             </div>
           </div>
         )}
 
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--charcoal)', marginBottom: 4 }}>
-            {mode === 'login' ? 'Sign in' : 'Create account'}
+        {/* ── Form heading ── */}
+        <div style={{ marginBottom: 20 }}>
+          <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--charcoal)', marginBottom: 4 }}>
+            {mode === 'login' ? 'Sign in' : 'Request Access'}
           </h1>
           <p style={{ fontSize: 13, color: 'var(--mist)' }}>
-            {mode === 'login' ? 'Access the travel log system' : 'Request access to the system'}
+            {mode === 'login' ? 'Enter your credentials to continue' : 'Submit your details and an admin will activate your account'}
           </p>
         </div>
 
-        {error && <div className="auth-error">{error}</div>}
+        {/* ── Error / Success messages ── */}
+        {error && (
+          <div className="auth-error" style={{ marginBottom: 16 }}>{error}</div>
+        )}
         {success && (
           <div style={{ background: '#D1FAE5', color: '#065F46', padding: '10px 14px', borderRadius: 10, fontSize: 13, marginBottom: 16 }}>
             {success}
           </div>
         )}
 
+        {/* ── Form ── */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {mode === 'signup' && (
             <div className="form-group">
@@ -87,11 +108,12 @@ export default function AuthPage() {
                 type="text"
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
-                placeholder="John Doe"
+                placeholder="e.g. John Smith"
                 required
               />
             </div>
           )}
+
           <div className="form-group">
             <label className="form-label">Email Address</label>
             <input
@@ -103,6 +125,7 @@ export default function AuthPage() {
               required
             />
           </div>
+
           <div className="form-group">
             <label className="form-label">Password</label>
             <input
@@ -116,27 +139,47 @@ export default function AuthPage() {
             />
           </div>
 
-          <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop: 4, justifyContent: 'center' }}>
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={loading}
+            style={{ marginTop: 4, justifyContent: 'center', padding: '11px 16px', fontSize: 14 }}
+          >
             {loading ? <span className="spinner" style={{ width: 16, height: 16 }} /> : null}
-            {mode === 'login' ? 'Sign In' : 'Create Account'}
+            {mode === 'login' ? 'Sign In' : 'Submit Request'}
           </button>
         </form>
 
+        {/* ── Toggle mode ── */}
         <div style={{ marginTop: 20, textAlign: 'center', fontSize: 13, color: 'var(--mist)' }}>
           {mode === 'login' ? (
-            <>Don't have an account?{' '}
-              <button onClick={() => setMode('signup')} style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
+            <>
+              Don&apos;t have an account?{' '}
+              <button
+                onClick={() => { setMode('signup'); setError(''); setSuccess('') }}
+                style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', fontWeight: 500 }}
+              >
                 Request access
               </button>
             </>
           ) : (
-            <>Already have an account?{' '}
-              <button onClick={() => setMode('login')} style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
+            <>
+              Already have an account?{' '}
+              <button
+                onClick={() => { setMode('login'); setError(''); setSuccess('') }}
+                style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', fontWeight: 500 }}
+              >
                 Sign in
               </button>
             </>
           )}
         </div>
+
+        {/* ── Footer ── */}
+        <div style={{ marginTop: 28, paddingTop: 16, borderTop: '1px solid var(--smoke)', textAlign: 'center', fontSize: 11, color: 'var(--silver)' }}>
+          Westpaq Engineering Nigeria Limited · Internal System
+        </div>
+
       </div>
     </div>
   )
