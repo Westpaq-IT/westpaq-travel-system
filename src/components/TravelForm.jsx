@@ -1,31 +1,69 @@
 import { useState } from 'react'
 import { NATIONALITIES, VISA_TYPES, VISA_STATUSES, REASONS } from '../lib/supabase'
 
-const DOMESTIC_PORTS = ['LAG', 'PHC', 'ABJ', 'ABV', 'KAN', 'ENU', 'WARI', 'BEN', 'IBA', 'ILR', 'Jos']
-const OFFSHORE_LOCS = ['LAG', 'Offshore', 'Bonga North', 'FPSO', 'Vessel']
-
-// Primary companies get quick-pick buttons; anything else goes in free-text
+// ── Constants ─────────────────────────────────────────────────────────────────
 const PRIMARY_COMPANIES = ['WESTPAQ', 'UTC']
 
+const OFFSHORE_LOCS = ['LAG', 'Offshore', 'Bonga North', 'FPSO', 'Vessel']
+const DOMESTIC_PORTS = ['LAG', 'PHC', 'ABJ', 'ABV', 'KAN', 'ENU', 'WARI', 'BEN', 'IBA', 'ILR', 'Jos']
+
+// ── Company Field ─────────────────────────────────────────────────────────────
 function CompanyField({ value, onChange }) {
-  // Determine if current value is a primary company or a custom one
   const isPrimary = PRIMARY_COMPANIES.includes(value)
-  const [mode, setMode] = useState(
-    !value ? 'none' : isPrimary ? 'primary' : 'other'
-  )
-  const [otherText, setOtherText] = useState(
-    !isPrimary && value ? value : ''
-  )
+  const [mode, setMode] = useState(!value ? 'none' : isPrimary ? 'primary' : 'other')
+  const [otherText, setOtherText] = useState(!isPrimary && value ? value : '')
 
-  function selectPrimary(company) {
-    setMode('primary')
-    setOtherText('')
-    onChange(company)
-  }
+  function selectPrimary(company) { setMode('primary'); setOtherText(''); onChange(company) }
+  function selectOther() { setMode('other'); onChange(otherText) }
+  function handleOtherChange(e) { setOtherText(e.target.value); onChange(e.target.value) }
 
-  function selectOther() {
-    setMode('other')
-    onChange(otherText)
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+        {PRIMARY_COMPANIES.map(c => (
+          <button key={c} type="button" onClick={() => selectPrimary(c)} style={{
+            padding: '7px 18px', borderRadius: 8,
+            border: value === c ? '2px solid var(--red)' : '1.5px solid var(--smoke)',
+            background: value === c ? 'var(--red)' : 'white',
+            color: value === c ? 'white' : 'var(--charcoal)',
+            fontWeight: 700, fontSize: 13.5, cursor: 'pointer',
+            fontFamily: 'inherit', letterSpacing: '0.3px', transition: 'all 0.15s',
+          }}>{c}</button>
+        ))}
+        <button type="button" onClick={selectOther} style={{
+          padding: '7px 18px', borderRadius: 8,
+          border: mode === 'other' ? '2px solid var(--red)' : '1.5px solid var(--smoke)',
+          background: mode === 'other' ? 'var(--red-light)' : 'white',
+          color: mode === 'other' ? 'var(--red-dark)' : 'var(--slate)',
+          fontWeight: 500, fontSize: 13.5, cursor: 'pointer',
+          fontFamily: 'inherit', transition: 'all 0.15s',
+        }}>Other…</button>
+      </div>
+      {mode === 'other' && (
+        <input className="form-control" type="text" value={otherText}
+          onChange={handleOtherChange}
+          placeholder="Type company name (e.g. BMG, Atlantic Blue Water)"
+          autoFocus />
+      )}
+    </div>
+  )
+}
+
+// ── Location Field (dropdown with Other free-text option) ─────────────────────
+function LocationField({ value, onChange, options, placeholder }) {
+  const isPreset = options.includes(value)
+  const [mode, setMode] = useState(!value ? 'none' : isPreset ? 'preset' : 'other')
+  const [otherText, setOtherText] = useState(!isPreset && value ? value : '')
+
+  function handleSelect(e) {
+    const v = e.target.value
+    if (v === '__other__') {
+      setMode('other')
+      onChange(otherText)
+    } else {
+      setMode('preset')
+      onChange(v)
+    }
   }
 
   function handleOtherChange(e) {
@@ -33,67 +71,27 @@ function CompanyField({ value, onChange }) {
     onChange(e.target.value)
   }
 
+  const selectValue = mode === 'other' ? '__other__' : (value || '')
+
   return (
     <div>
-      {/* Quick-pick row */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-        {PRIMARY_COMPANIES.map(c => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => selectPrimary(c)}
-            style={{
-              padding: '7px 18px',
-              borderRadius: 8,
-              border: value === c ? '2px solid var(--red)' : '1.5px solid var(--smoke)',
-              background: value === c ? 'var(--red)' : 'white',
-              color: value === c ? 'white' : 'var(--charcoal)',
-              fontWeight: 700,
-              fontSize: 13.5,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              letterSpacing: '0.3px',
-              transition: 'all 0.15s',
-            }}
-          >
-            {c}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={selectOther}
-          style={{
-            padding: '7px 18px',
-            borderRadius: 8,
-            border: mode === 'other' ? '2px solid var(--red)' : '1.5px solid var(--smoke)',
-            background: mode === 'other' ? 'var(--red-light)' : 'white',
-            color: mode === 'other' ? 'var(--red-dark)' : 'var(--slate)',
-            fontWeight: 500,
-            fontSize: 13.5,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            transition: 'all 0.15s',
-          }}
-        >
-          Other…
-        </button>
-      </div>
-
-      {/* Free-text input shown when "Other" is selected */}
+      <select className="form-control" value={selectValue} onChange={handleSelect}
+        style={{ marginBottom: mode === 'other' ? 6 : 0 }}>
+        <option value="">Select...</option>
+        {options.map(l => <option key={l} value={l}>{l}</option>)}
+        <option value="__other__">Other (type manually)…</option>
+      </select>
       {mode === 'other' && (
-        <input
-          className="form-control"
-          type="text"
-          value={otherText}
+        <input className="form-control" type="text" value={otherText}
           onChange={handleOtherChange}
-          placeholder="Type company name (e.g. BMG, Atlantic Blue Water)"
-          autoFocus
-        />
+          placeholder={placeholder || 'Type location...'}
+          autoFocus />
       )}
     </div>
   )
 }
 
+// ── Main Form ─────────────────────────────────────────────────────────────────
 export default function TravelForm({ type, record, onSave, onClose }) {
   const isEdit = !!record
   const [saving, setSaving] = useState(false)
@@ -118,12 +116,15 @@ export default function TravelForm({ type, record, onSave, onClose }) {
     setError('')
     if (!form.name.trim()) { setError('Name is required'); return }
 
+    // Convert empty strings to null so the database doesn't get invalid empty dates
     const cleaned = Object.fromEntries(
       Object.entries(form).map(([k, v]) => [k, v === '' ? null : v])
     )
 
     setSaving(true)
     const err = await onSave(cleaned)
+    if (err) setError(err.message || 'Failed to save. Please try again.')
+    setSaving(false)
   }
 
   const typeLabel = {
@@ -141,14 +142,18 @@ export default function TravelForm({ type, record, onSave, onClose }) {
   const showETA = type === 'international_arrival' || type === 'domestic'
   const showETD = type === 'international_departure' || type === 'domestic'
 
+  const sectionLabel = (text) => (
+    <div style={{ fontWeight: 600, fontSize: 11, color: 'var(--mist)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>
+      {text}
+    </div>
+  )
+
   return (
     <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="modal">
         <div className="modal-header">
           <div>
-            <div className="modal-title">
-              {isEdit ? 'Edit Record' : `Add ${typeLabel}`}
-            </div>
+            <div className="modal-title">{isEdit ? 'Edit Record' : `Add ${typeLabel}`}</div>
             <div className="modal-subtitle">Bonga North Project — Travel Log</div>
           </div>
           <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">
@@ -166,10 +171,8 @@ export default function TravelForm({ type, record, onSave, onClose }) {
               </div>
             )}
 
-            {/* Person */}
-            <div style={{ marginBottom: 4, fontWeight: 600, fontSize: 11, color: 'var(--mist)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>
-              Person Details
-            </div>
+            {/* ── Person Details ── */}
+            {sectionLabel('Person Details')}
             <div className="form-grid" style={{ marginBottom: 16 }}>
               <div className="form-group span-2">
                 <label className="form-label">Full Name *</label>
@@ -181,10 +184,7 @@ export default function TravelForm({ type, record, onSave, onClose }) {
               </div>
               <div className="form-group">
                 <label className="form-label">Company</label>
-                <CompanyField
-                  value={form.company}
-                  onChange={v => setVal('company', v)}
-                />
+                <CompanyField value={form.company} onChange={v => setVal('company', v)} />
               </div>
               <div className="form-group">
                 <label className="form-label">Nationality</label>
@@ -197,12 +197,10 @@ export default function TravelForm({ type, record, onSave, onClose }) {
 
             <hr className="section-divider" />
 
-            {/* Visa (international arrivals) */}
+            {/* ── Visa (International Arrivals only) ── */}
             {showVisa && (
               <>
-                <div style={{ fontWeight: 600, fontSize: 11, color: 'var(--mist)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>
-                  Visa Information
-                </div>
+                {sectionLabel('Visa Information')}
                 <div className="form-grid" style={{ marginBottom: 16 }}>
                   <div className="form-group">
                     <label className="form-label">Visa Type</label>
@@ -223,70 +221,79 @@ export default function TravelForm({ type, record, onSave, onClose }) {
               </>
             )}
 
-            {/* Offshore status */}
+            {/* ── Offshore Status & Route ── */}
             {showOffshoreFields && (
               <>
-                <div style={{ fontWeight: 600, fontSize: 11, color: 'var(--mist)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>
-                  Offshore Status
-                </div>
+                {sectionLabel('Offshore Status & Route')}
                 <div className="form-grid" style={{ marginBottom: 16 }}>
                   <div className="form-group">
                     <label className="form-label">Status</label>
                     <select className="form-control" value={form.status} onChange={set('status')}>
                       <option value="">Select...</option>
-                      <option>OK</option><option>Pending</option><option>Cancelled</option>
+                      <option>OK</option>
+                      <option>Pending</option>
+                      <option>Cancelled</option>
                     </select>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Departure From</label>
-                    <select className="form-control" value={form.departure_from} onChange={set('departure_from')}>
-                      <option value="">Select...</option>
-                      {OFFSHORE_LOCS.map(l => <option key={l}>{l}</option>)}
-                    </select>
+                    <LocationField
+                      value={form.departure_from}
+                      onChange={v => setVal('departure_from', v)}
+                      options={OFFSHORE_LOCS}
+                      placeholder="e.g. Warri, Platform A, PHC"
+                    />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Arrival To</label>
-                    <input className="form-control" value={form.arrival_to} onChange={set('arrival_to')} placeholder="e.g. Offshore, Vessel, LAG" />
+                    <LocationField
+                      value={form.arrival_to}
+                      onChange={v => setVal('arrival_to', v)}
+                      options={OFFSHORE_LOCS}
+                      placeholder="e.g. Warri, Platform A, PHC"
+                    />
                   </div>
                 </div>
                 <hr className="section-divider" />
               </>
             )}
 
-            {/* Domestic ports */}
+            {/* ── Domestic Route ── */}
             {showDomPorts && (
               <>
-                <div style={{ fontWeight: 600, fontSize: 11, color: 'var(--mist)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>
-                  Route
-                </div>
+                {sectionLabel('Route')}
                 <div className="form-grid" style={{ marginBottom: 16 }}>
                   <div className="form-group">
                     <label className="form-label">Departure From</label>
-                   <input className="form-control" value={form.departure_from} onChange={set('departure_from')} placeholder="e.g. LAG, Bonga North, FPSO" />
+                    <LocationField
+                      value={form.departure_from}
+                      onChange={v => setVal('departure_from', v)}
+                      options={DOMESTIC_PORTS}
+                      placeholder="e.g. Enugu, Warri, Calabar"
+                    />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Arrival To</label>
-                    <select className="form-control" value={form.arrival_to} onChange={set('arrival_to')}>
-                      <option value="">Select port...</option>
-                      {DOMESTIC_PORTS.map(p => <option key={p}>{p}</option>)}
-                    </select>
+                    <LocationField
+                      value={form.arrival_to}
+                      onChange={v => setVal('arrival_to', v)}
+                      options={DOMESTIC_PORTS}
+                      placeholder="e.g. Enugu, Warri, Calabar"
+                    />
                   </div>
                 </div>
                 <hr className="section-divider" />
               </>
             )}
 
-            {/* Flight details */}
-            <div style={{ fontWeight: 600, fontSize: 11, color: 'var(--mist)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>
-              Flight Details
-            </div>
+            {/* ── Flight Details ── */}
+            {sectionLabel('Flight Details')}
             <div className="form-grid" style={{ marginBottom: 16 }}>
               <div className="form-group">
                 <label className="form-label">Reason for Travel</label>
                 <select className="form-control" value={form.reason} onChange={set('reason')}>
                   <option value="">Select...</option>
                   {REASONS.map(r => <option key={r}>{r}</option>)}
-                  <option>TAM Mob</option>
                 </select>
               </div>
               <div className="form-group">
@@ -295,9 +302,7 @@ export default function TravelForm({ type, record, onSave, onClose }) {
               </div>
               {showDepartureDate && (
                 <div className="form-group">
-                  <label className="form-label">
-                    {type === 'domestic' ? 'Date' : 'Departure Date'}
-                  </label>
+                  <label className="form-label">{type === 'domestic' ? 'Date' : 'Departure Date'}</label>
                   <input type="date" className="form-control" value={form.departure_date} onChange={set('departure_date')} />
                 </div>
               )}
@@ -335,10 +340,8 @@ export default function TravelForm({ type, record, onSave, onClose }) {
 
             <hr className="section-divider" />
 
-            {/* Logistics */}
-            <div style={{ fontWeight: 600, fontSize: 11, color: 'var(--mist)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>
-              Logistics
-            </div>
+            {/* ── Logistics ── */}
+            {sectionLabel('Logistics')}
             <div className="form-grid" style={{ marginBottom: 0 }}>
               <div className="form-group">
                 <label className="form-label">Ticket Booking Status</label>
