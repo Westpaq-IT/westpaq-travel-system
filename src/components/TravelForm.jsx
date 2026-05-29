@@ -118,10 +118,12 @@ export default function TravelForm({ type, record, onSave, onClose }) {
     setError('')
     if (!form.name.trim()) { setError('Name is required'); return }
 
+    const cleaned = Object.fromEntries(
+      Object.entries(form).map(([k, v]) => [k, v === '' ? null : v])
+    )
+
     setSaving(true)
-    const err = await onSave(form)
-    if (err) setError(err.message || 'Failed to save. Please try again.')
-    setSaving(false)
+    const err = await onSave(cleaned)
   }
 
   const typeLabel = {
@@ -244,10 +246,7 @@ export default function TravelForm({ type, record, onSave, onClose }) {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Arrival To</label>
-                    <select className="form-control" value={form.arrival_to} onChange={set('arrival_to')}>
-                      <option value="">Select...</option>
-                      {OFFSHORE_LOCS.map(l => <option key={l}>{l}</option>)}
-                    </select>
+                    <input className="form-control" value={form.arrival_to} onChange={set('arrival_to')} placeholder="e.g. Offshore, Vessel, LAG" />
                   </div>
                 </div>
                 <hr className="section-divider" />
@@ -263,10 +262,7 @@ export default function TravelForm({ type, record, onSave, onClose }) {
                 <div className="form-grid" style={{ marginBottom: 16 }}>
                   <div className="form-group">
                     <label className="form-label">Departure From</label>
-                    <select className="form-control" value={form.departure_from} onChange={set('departure_from')}>
-                      <option value="">Select port...</option>
-                      {DOMESTIC_PORTS.map(p => <option key={p}>{p}</option>)}
-                    </select>
+                   <input className="form-control" value={form.departure_from} onChange={set('departure_from')} placeholder="e.g. LAG, Bonga North, FPSO" />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Arrival To</label>
