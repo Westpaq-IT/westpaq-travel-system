@@ -3,10 +3,22 @@ import { supabase, FLIGHT_TYPE_LABELS } from '../lib/supabase'
 import { format, addDays, isToday, isTomorrow, parseISO, startOfDay } from 'date-fns'
 
 const TYPE_COLORS = {
-  international_arrival: { accent: '#065F46', label: 'Int\'l Arrival', badge: 'badge-arrival' },
-  international_departure: { accent: '#1E40AF', label: 'Int\'l Departure', badge: 'badge-departure' },
-  domestic: { accent: '#6B21A8', label: 'Domestic', badge: 'badge-domestic' },
-  offshore: { accent: '#B45309', label: 'Offshore', badge: 'badge-offshore' },
+  international_arrival:   { accent: '#065F46', label: "Int'l Arrival",   badge: 'badge-arrival'   },
+  international_departure: { accent: '#1E40AF', label: "Int'l Departure", badge: 'badge-departure' },
+  domestic:                { accent: '#6B21A8', label: 'Domestic',         badge: 'badge-domestic'  },
+  offshore:                { accent: '#B45309', label: 'Offshore',         badge: 'badge-offshore'  },
+}
+
+function Detail({ label, value }) {
+  if (!value) return null
+  return (
+    <span style={{ marginRight: 10 }}>
+      <span style={{ color: 'var(--mist)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+        {label}:{' '}
+      </span>
+      <span style={{ fontSize: 12, color: 'var(--slate)', fontWeight: 500 }}>{value}</span>
+    </span>
+  )
 }
 
 export default function Dashboard({ navigate }) {
@@ -15,28 +27,24 @@ export default function Dashboard({ navigate }) {
   const [recent, setRecent] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchData()
-  }, [])
+  useEffect(() => { fetchData() }, [])
 
   async function fetchData() {
     const today = format(new Date(), 'yyyy-MM-dd')
-    const next7 = format(addDays(new Date(), 7), 'yyyy-MM-dd')
+    const next7  = format(addDays(new Date(), 7), 'yyyy-MM-dd')
 
     const [totalRes, upcomingRes, recentRes] = await Promise.all([
       supabase.from('travel_records').select('flight_type', { count: 'exact' }).eq('archived', false),
       supabase.from('travel_records')
-        .select('*')
-        .eq('archived', false)
+        .select('*').eq('archived', false)
         .or(`arrival_date.gte.${today},departure_date.gte.${today}`)
         .or(`arrival_date.lte.${next7},departure_date.lte.${next7}`)
         .order('arrival_date', { ascending: true })
         .limit(50),
       supabase.from('travel_records')
-        .select('*')
-        .eq('archived', false)
+        .select('*').eq('archived', false)
         .order('created_at', { ascending: false })
-        .limit(10)
+        .limit(10),
     ])
 
     if (totalRes.data) {
@@ -45,12 +53,12 @@ export default function Dashboard({ navigate }) {
         return acc
       }, {})
       setStats({
-        total: totalRes.count || 0,
-        arrivals: counts.international_arrival || 0,
+        total:      totalRes.count || 0,
+        arrivals:   counts.international_arrival   || 0,
         departures: counts.international_departure || 0,
-        domestic: counts.domestic || 0,
-        offshore: counts.offshore || 0,
-        upcoming7: (upcomingRes.data || []).length,
+        domestic:   counts.domestic  || 0,
+        offshore:   counts.offshore  || 0,
+        upcoming7:  (upcomingRes.data || []).length,
       })
     }
 
@@ -76,7 +84,7 @@ export default function Dashboard({ navigate }) {
   function dayLabel(dateStr) {
     if (!dateStr) return 'TBD'
     const d = parseISO(dateStr)
-    if (isToday(d)) return 'Today'
+    if (isToday(d))    return 'Today'
     if (isTomorrow(d)) return 'Tomorrow'
     return format(d, 'EEEE, d MMM')
   }
@@ -92,12 +100,12 @@ export default function Dashboard({ navigate }) {
   }
 
   const statCards = [
-    { label: 'Total Records', value: stats.total, accent: '#636366', nav: 'dashboard' },
-    { label: 'Int\'l Arrivals', value: stats.arrivals, accent: '#065F46', nav: 'international-arrivals' },
-    { label: 'Int\'l Departures', value: stats.departures, accent: '#1E40AF', nav: 'international-departures' },
-    { label: 'Domestic Flights', value: stats.domestic, accent: '#6B21A8', nav: 'domestic' },
-    { label: 'Offshore Log', value: stats.offshore, accent: '#B45309', nav: 'offshore' },
-    { label: 'Upcoming (7 days)', value: stats.upcoming7, accent: '#9B1C1C', nav: 'dashboard' },
+    { label: 'Total Records',     value: stats.total,      accent: '#636366', nav: 'dashboard'                  },
+    { label: "Int'l Arrivals",    value: stats.arrivals,   accent: '#065F46', nav: 'international-arrivals'     },
+    { label: "Int'l Departures",  value: stats.departures, accent: '#1E40AF', nav: 'international-departures'   },
+    { label: 'Domestic Flights',  value: stats.domestic,   accent: '#6B21A8', nav: 'domestic'                   },
+    { label: 'Offshore Log',      value: stats.offshore,   accent: '#B45309', nav: 'offshore'                   },
+    { label: 'Upcoming (7 days)', value: stats.upcoming7,  accent: '#9B1C1C', nav: 'dashboard'                  },
   ]
 
   const grouped = groupByDay(upcoming)
@@ -107,7 +115,9 @@ export default function Dashboard({ navigate }) {
       <div className="page-header">
         <div>
           <div className="page-title">Dashboard</div>
-          <div className="page-subtitle">Bonga North Project — Travel Overview · {format(new Date(), 'EEEE, d MMMM yyyy')}</div>
+          <div className="page-subtitle">
+            Bonga North Project — Travel Overview · {format(new Date(), 'EEEE, d MMMM yyyy')}
+          </div>
         </div>
         <button className="btn btn-primary" onClick={() => navigate('international-arrivals')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{width:15,height:15}}>
@@ -117,14 +127,10 @@ export default function Dashboard({ navigate }) {
         </button>
       </div>
 
+      {/* ── Stat cards ── */}
       <div className="stats-grid">
         {statCards.map((s, i) => (
-          <div
-            key={i}
-            className="stat-card"
-            onClick={() => navigate(s.nav)}
-            style={{ cursor: 'pointer' }}
-          >
+          <div key={i} className="stat-card" onClick={() => navigate(s.nav)} style={{ cursor: 'pointer' }}>
             <div className="stat-accent" style={{ background: s.accent }} />
             <div className="stat-label">{s.label}</div>
             <div className="stat-value">
@@ -137,7 +143,7 @@ export default function Dashboard({ navigate }) {
       <div className="page-content">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 16 }}>
 
-          {/* Upcoming flights */}
+          {/* ── Upcoming flights ── */}
           <div className="card">
             <div className="card-header">
               <span className="card-title">Upcoming Flights (Next 7 Days)</span>
@@ -162,30 +168,55 @@ export default function Dashboard({ navigate }) {
                   <div key={date} className="day-group">
                     <div className="day-label">{dayLabel(date)}</div>
                     {flights.map(f => {
-                      const tc = TYPE_COLORS[f.flight_type] || TYPE_COLORS.domestic
+                      const tc   = TYPE_COLORS[f.flight_type] || TYPE_COLORS.domestic
                       const time = f.eta_time || f.etd_time
+                      const route = f.departure_from && f.arrival_to
+                        ? `${f.departure_from} → ${f.arrival_to}`
+                        : f.departure_from || f.arrival_to || null
+
                       return (
-                        <div key={f.id} className="flight-row">
-                          <div className="flight-time" style={{ color: tc.accent }}>
+                        <div key={f.id} className="flight-row" style={{ alignItems: 'flex-start', paddingTop: 14, paddingBottom: 14 }}>
+
+                          {/* Time */}
+                          <div className="flight-time" style={{ color: tc.accent, paddingTop: 2 }}>
                             {time ? time.slice(0, 5) : '--:--'}
                           </div>
-                          <div className="flight-info">
-                            <div className="flight-name">{f.name}</div>
-                            <div className="flight-meta">
-                              {f.company} · {f.position}
-                              {f.accommodation ? ` · ${f.accommodation}` : ''}
+
+                          {/* Main info */}
+                          <div className="flight-info" style={{ flex: 1 }}>
+                            <div className="flight-name" style={{ marginBottom: 3 }}>{f.name}</div>
+
+                            {/* Row 1: company, position, nationality */}
+                            <div style={{ fontSize: 12, color: 'var(--mist)', marginBottom: 4 }}>
+                              {[f.company, f.position, f.nationality].filter(Boolean).join(' · ')}
+                            </div>
+
+                            {/* Row 2: detail chips */}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0 }}>
+                              <Detail label="Route"   value={route} />
+                              <Detail label="Reason"  value={f.reason} />
+                              <Detail label="Ticket"  value={f.ticket_booking} />
+                              <Detail label="Stay"    value={f.accommodation} />
+                              {f.visa_status && <Detail label="Visa" value={f.visa_status} />}
+                              {f.status      && <Detail label="Status" value={f.status} />}
                             </div>
                           </div>
-                          <div className="flight-right">
-                            <div className="flight-number" style={{ color: tc.accent }}>
+
+                          {/* Right: flight number + badge */}
+                          <div className="flight-right" style={{ textAlign: 'right', paddingTop: 2 }}>
+                            <div className="flight-number" style={{ color: tc.accent, marginBottom: 4 }}>
                               {f.flight_number || '—'}
                             </div>
-                            <div className="flight-route">
-                              <span className={`badge ${tc.badge}`} style={{ fontSize: 10 }}>
-                                {tc.label}
-                              </span>
-                            </div>
+                            <span className={`badge ${tc.badge}`} style={{ fontSize: 10 }}>
+                              {tc.label}
+                            </span>
+                            {f.remarks && (
+                              <div style={{ fontSize: 10, color: 'var(--mist)', marginTop: 4, maxWidth: 120, textAlign: 'right', fontStyle: 'italic' }}>
+                                {f.remarks}
+                              </div>
+                            )}
                           </div>
+
                         </div>
                       )
                     })}
@@ -195,7 +226,7 @@ export default function Dashboard({ navigate }) {
             )}
           </div>
 
-          {/* Recent entries */}
+          {/* ── Recent entries ── */}
           <div className="card">
             <div className="card-header">
               <span className="card-title">Recent Entries</span>
@@ -211,26 +242,43 @@ export default function Dashboard({ navigate }) {
                 </div>
               ) : recent.map(r => {
                 const tc = TYPE_COLORS[r.flight_type] || TYPE_COLORS.domestic
+                const date = r.arrival_date || r.departure_date
                 return (
-                  <div key={r.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--smoke)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: tc.accent, flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {r.name}
+                  <div key={r.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--smoke)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: tc.accent, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {r.name}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: 'var(--mist)' }}>
+                          {[r.company, r.position].filter(Boolean).join(' · ')} · {tc.label}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 11.5, color: 'var(--mist)' }}>
-                        {r.company} · {tc.label}
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: tc.accent }}>
+                          {date ? format(parseISO(date), 'dd MMM') : '—'}
+                        </div>
+                        {r.flight_number && (
+                          <div style={{ fontSize: 11, color: 'var(--mist)' }}>{r.flight_number}</div>
+                        )}
                       </div>
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--mist)', flexShrink: 0 }}>
-                      {r.arrival_date ? format(parseISO(r.arrival_date), 'dd MMM') :
-                       r.departure_date ? format(parseISO(r.departure_date), 'dd MMM') : '—'}
+                    {/* Extra detail line */}
+                    <div style={{ marginTop: 4, marginLeft: 18, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {r.nationality   && <Detail label="Nat"    value={r.nationality} />}
+                      {r.reason        && <Detail label="Reason" value={r.reason} />}
+                      {r.ticket_booking && <Detail label="Ticket" value={r.ticket_booking} />}
+                      {(r.departure_from || r.arrival_to) && (
+                        <Detail label="Route" value={[r.departure_from, r.arrival_to].filter(Boolean).join(' → ')} />
+                      )}
                     </div>
                   </div>
                 )
               })}
             </div>
           </div>
+
         </div>
       </div>
     </>
