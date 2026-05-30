@@ -751,13 +751,103 @@ select.form-control { cursor: pointer; }
 
 .section-tab.active { background: white; color: var(--red); box-shadow: var(--shadow-sm); }
 
+/* ─── Mobile top bar ─── */
+.mobile-topbar {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: white;
+  border-bottom: 1px solid var(--smoke);
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  z-index: 150;
+  box-shadow: var(--shadow-sm);
+}
+
+.mobile-menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--charcoal);
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.mobile-menu-btn svg { width: 22px; height: 22px; }
+.mobile-menu-btn:hover { background: var(--cloud); }
+
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 180;
+}
+
+/* ─── Desktop sidebar ─── */
+.desktop-sidebar {
+  display: flex;
+}
+
+.mobile-sidebar {
+  display: none;
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); }
-  .main-content { margin-left: 0; }
+  /* Show mobile topbar */
+  .mobile-topbar { display: flex; }
+
+  /* Hide desktop sidebar, show mobile versions */
+  .desktop-sidebar { display: none; }
+  .mobile-sidebar {
+    display: flex;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 200;
+  }
+  .mobile-sidebar-open {
+    transform: translateX(0);
+  }
+  .mobile-overlay { display: block; }
+
+  /* Main content shifts down for topbar */
+  .main-content {
+    margin-left: 0;
+    padding-top: 56px;
+  }
+
+  /* Forms go single column */
   .form-grid { grid-template-columns: 1fr; }
   .form-grid.cols-3 { grid-template-columns: 1fr; }
   .form-group.span-2, .form-group.span-3 { grid-column: span 1; }
+
+  /* Page header stacks on mobile */
+  .page-header {
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    gap: 10px;
+  }
+
+  .page-content { padding: 16px; }
+
+  .stats-grid { padding: 16px 16px 0; }
+
+  /* Table scrolls horizontally */
+  .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Modal full-screen on mobile */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal {
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    max-height: 92vh;
+    max-width: 100%;
+  }
 }
 
 /* ─── Divider ─── */
